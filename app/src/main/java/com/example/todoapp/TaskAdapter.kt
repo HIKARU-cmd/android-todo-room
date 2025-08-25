@@ -9,6 +9,9 @@ import android.widget.CheckBox
 import android.view.View
 import android.view.ViewGroup
 import com.example.todoapp.data.Task
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 // リスト変換用の変換処理、TaskデータをListViewに一軒ずつ見た目として表示するViewに変換するクラスのこと(データをViewに変換)
 class TaskAdapter(
@@ -28,6 +31,7 @@ class TaskAdapter(
 
         val checkBox = view.findViewById<CheckBox>(R.id.checkDone)      // viewは現在処理している一行分のView、その中からCheckBox部品を探して取り出す処理　　　※(R.id.checkDone)は型をCheckBoxとして取り出している
         val textTitle = view.findViewById<TextView>(R.id.textTitle)
+        val textDate  = view.findViewById<TextView>(R.id.textDate)
 
         val task = tasks[position]
         checkBox.isChecked = task.done      // チェックが入っているかどうかisCheckedはBoolean型
@@ -39,6 +43,8 @@ class TaskAdapter(
         else
             textTitle.paintFlags and Paint.STRIKE_THRU_TEXT_FLAG.inv()
 
+        textDate.text = formatTime(task.createdAt)
+
         checkBox.setOnCheckedChangeListener(null)       // 一度チェックボックスに設定されているリスナを削除　　ListView では行の View を再利用しているので、リスナが残っている可能性があるので。　リスナとはイベントが起きた時に呼び出される処理を登録しておく仕組み
         checkBox.setOnCheckedChangeListener {_, isChecked ->       // ユーザーがチェックボックスを操作して、ON/OFF が変わった瞬間に呼ばれる処理
             onCheckedChange(task, isChecked)                       // アダプタのコンストラクタで受け取った関数をここで呼び出している 第一引数: どのタスクか（task）第二引数: チェック状態（isChecked）
@@ -46,4 +52,11 @@ class TaskAdapter(
 
         return view     // convertView が nullじゃない➡gviewの中身は一行分のUI(View オブジェクト)　　　　　convertView が null　➡　XML（list_item_task.xml）から新しく作った 1行分のUI
     }
+
+    private fun formatTime(millis: Long?): String {
+        if (millis == null || millis == 0L) return ""
+        val df = SimpleDateFormat("yyyy/MM/dd HH:mm", Locale.getDefault())
+        return df.format(Date(millis))
+    }
+
 }
