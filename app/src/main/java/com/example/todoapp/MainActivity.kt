@@ -1,6 +1,7 @@
 package com.example.todoapp
 
 import android.os.Bundle
+import android.text.InputType
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ListView
@@ -39,25 +40,35 @@ class MainActivity : AppCompatActivity() {  // AppCompatActivityクラスを継�
         super.onCreate(savedInstanceState)                  // superはスーパークラスを指す、つまりスーパークラスのonCreateを呼び出している。Androidの画面として正常に動作するための準備をスーパークラスに任せる部分
         setContentView(R.layout.activity_main)              // 画面に表示するレイアウト(XMLファイル)を指定する
 
-        val taskInput:EditText = findViewById(R.id.taskInput)   // 画面にある部品をコードで操作できるように変数に代入。UI要素を取得している
-        val tasklist:ListView = findViewById(R.id.tasklist)
-        val addButton:Button = findViewById(R.id.addButton)
+        val taskInput: EditText =
+            findViewById(R.id.taskInput)   // 画面にある部品をコードで操作できるように変数に代入。UI要素を取得している
+        val tasklist: ListView = findViewById(R.id.tasklist)
+        val addButton: Button = findViewById(R.id.addButton)
 
-       // 起動時にDBからメモリへ読み込み DBが変更するたびにListViewが更新される
+        // 起動時にDBからメモリへ読み込み DBが変更するたびにListViewが更新される
         lifecycleScope.launch {                                                                 // lifecycleScopeはAndoroid画面のライフサイクルに合わせて自動で動きを制御する機能、launchは非同期的に処理を進める、
             viewModel.tasks.collect { rows ->                                                   //  viewModel.tasksはFlow<List<Task>>型(リアルタイムにデータ変更を通知する仕組み)　rowsは最新のタスクリストDBの状態によって更新する
-                currentRows = rows                                                              // .collect { ... -> ... }の書き方は基本的にFlow型のみデータを受け取れる
-                adapter = TaskAdapter(this@MainActivity, rows) { task, isChecked ->      // ここのtaskはチェックされた（または外された）行に対応する Task オブジェクト
-                viewModel.updateDone(task.id, isChecked)                                        // { task, isChecked ->...}は三つ目の引数として、TaskAdapterに処理は実行せずにコードのまま渡される、
+                currentRows =
+                    rows                                                              // .collect { ... -> ... }の書き方は基本的にFlow型のみデータを受け取れる
+                adapter = TaskAdapter(
+                    this@MainActivity,
+                    rows
+                ) { task, isChecked ->      // ここのtaskはチェックされた（または外された）行に対応する Task オブジェクト
+                    viewModel.updateDone(
+                        task.id,
+                        isChecked
+                    )                                        // { task, isChecked ->...}は三つ目の引数として、TaskAdapterに処理は実行せずにコードのまま渡される、
                 }                                                                               // isCheckedはチェックボックスがオンかオフかを表すBoolean型　　チェックされていれば true外されていれば false
-                tasklist.adapter = adapter                                                      // .adapter = adapter で、ListView にアダプター（TaskAdapter）をセットする。
+                tasklist.adapter =
+                    adapter                                                      // .adapter = adapter で、ListView にアダプター（TaskAdapter）をセットする。
             }
         }
 
         // タスク追加
         addButton.setOnClickListener {
-            val text = taskInput.text.toString().trim()                                         // textはkotlinのライブラリの一部である、プロパティを読んでいる、ここのプロパティは実際には関数を読んでいる。
-            if(text.isEmpty()) {
+            val text = taskInput.text.toString()
+                .trim()                                         // textはkotlinのライブラリの一部である、プロパティを読んでいる、ここのプロパティは実際には関数を読んでいる。
+            if (text.isEmpty()) {
                 Toast.makeText(this, "タスクを入力してください", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener                                                       // return@setOnClickListenerでクリックイベントの処理を中断
             }
@@ -70,17 +81,54 @@ class MainActivity : AppCompatActivity() {  // AppCompatActivityクラスを継�
             val taskToDelete = currentRows[position] // 画面表示から削除の対象を特定
 
             AlertDialog.Builder(this)
-                .setTitle("削除の確認")
-                .setMessage("「${taskToDelete.title}」を削除してもよろしいですか？")
-                .setPositiveButton("削除") {_, _ ->
-                    viewModel.deleteById(taskToDelete.id)
-                    Toast.makeText(this@MainActivity, "削除しました", Toast.LENGTH_SHORT).show()
-
+                .setTitle("操作の選択")
+                .setItems(arrayOf("編集", "削除")) { _, which ->
+                    when (which) {
+                        0 -> showEditDialog(taskToDelete.id, taskToDelete.title) // 編集先へ遷移
+                        1 -> {
+                            AlertDialog.Builder(this)
+                                .setTitle("削除の確認")
+                                .setMessage("「${taskToDelete.title}」を削除してもよろしいですか？")
+                                .setPositiveButton("削除") { _, _ ->
+                                    viewModel.deleteById(taskToDelete.id)
+                                    Toast.makeText(
+                                        this@MainActivity,
+                                        "削除しました",
+                                        Toast.LENGTH_SHORT
+                                    )
+                                        .show()
+                                }
+                                .setNegativeButton("キャンセル", null)
+                                .show()
+                        }
+                    }
                 }
-                .setNegativeButton("キャンセル", null)
                 .show()
-
             true //trueを返して処理が完了したということを、返している
         }
     }
+
+        private fun showEditDialog(taskId: Int, currentTitle: String) {
+            val input = EditText(this).apply {
+                setText(currentTitle)
+                setSelection(currentTitle.length)
+                inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
+            }
+
+            AlertDialog.Builder(this)
+                .setTitle("タイトルの編集")
+                .setView(input)
+                .setPositiveButton("保存") { _, _ ->
+                    val newTitle = input.text.toString().trim()
+
+                    if (newTitle.isBlank()) {
+                        Toast.makeText(this@MainActivity, "タスクを入力してください", Toast.LENGTH_SHORT).show()
+                    } else {
+                        viewModel.updateTitle(taskId, newTitle)
+                        Toast.makeText(this@MainActivity, "更新しました", Toast.LENGTH_SHORT).show()
+                    }
+                }
+                .setNegativeButton("キャンセル", null)
+                .show()
+        }
 }

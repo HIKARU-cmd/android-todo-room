@@ -15,6 +15,7 @@ class TaskViewModel(app: Application) : AndroidViewModel(app) {             // �
     val tasks: Flow<List<Task>> = dao.observeALL()                          // Flow<List<Task>> タスクの更新に追従できる　非同期データストリーム（次々データが流れてくるイメージ）
 
     fun add(title: String) = viewModelScope.launch {                        // add関数が呼ばれたら、バックグラウンドでタスクをDBに保存する処理を開始する
+        if(title.isBlank()) return@launch                                   // タスク名が空ならこのコルーチンから抜ける
         dao.insert(Task(title = title))
     }
 
@@ -24,5 +25,10 @@ class TaskViewModel(app: Application) : AndroidViewModel(app) {             // �
 
     fun updateDone(id: Int,done: Boolean) = viewModelScope.launch {
         dao.updateDone(id, done)
+    }
+
+    fun updateTitle(id: Int,title: String) = viewModelScope.launch {
+        if(title.isBlank()) return@launch                                   // タスク名が空ならこのコルーチンから抜ける
+        dao.updateTitle(id, title)
     }
 }
