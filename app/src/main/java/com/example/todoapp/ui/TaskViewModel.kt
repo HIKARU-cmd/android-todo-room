@@ -31,4 +31,8 @@ class TaskViewModel(app: Application) : AndroidViewModel(app) {             // �
         if(title.isBlank()) return@launch                                   // タスク名が空ならこのコルーチンから抜ける
         dao.updateTitle(id, title)
     }
+
+    fun updateDueAt(id: Int,dueAt: Long?) = viewModelScope.launch {
+        dao.updateDueAt(id, dueAt)
+    }
 }

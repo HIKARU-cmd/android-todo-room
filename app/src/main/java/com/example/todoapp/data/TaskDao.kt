@@ -8,7 +8,14 @@ import kotlinx.coroutines.flow.Flow
 // TaskDao.ktはDB操作、SQLの代わりにここで定義されたDB操作を実行する
 @Dao                                                            // このインターフェイスに書くメソッドは、「DB（SQLite）に対する操作ですよ」とRoomに知らせる
 interface TaskDao {                                             // interfaceはやること（メソッドの形）だけ決める設計図で、実際の中身（実装コード）は書かない　実際のコードはRoomが自動生成してくれる
-    @Query("SELECT * FROM tasks ORDER BY id DESC")
+    @Query("""
+        SELECT * FROM tasks 
+        ORDER BY
+        CASE WHEN dueAt IS NULL THEN 1 ELSE 0 END,
+        dueAt ASC,
+        createdAt DESC
+    """)
+
     fun observeALL(): Flow<List<Task>>                          // Flow：ストリーム（つまりタスク一覧がリアルタイムで流れてくる）　List<Task>：タスクの一覧
 
     @Insert
@@ -22,4 +29,7 @@ interface TaskDao {                                             // interfaceは�
 
     @Query("UPDATE tasks SET title = :title WHERE id = :id")
     suspend fun updateTitle(id: Int, title: String)
+
+    @Query("UPDATE tasks SET dueAt = :dueAt WHERE id = :id")
+    suspend fun updateDueAt(id: Int, dueAt: Long?)
 }

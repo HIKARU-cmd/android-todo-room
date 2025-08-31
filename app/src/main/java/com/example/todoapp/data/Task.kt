@@ -10,5 +10,6 @@ data class Task (                                       // data Classは通常�
 @PrimaryKey(autoGenerate = true) val id: Int = 0,       // 自動採番、挿入時の初期値として0を入れる
     val title: String,
     val done: Boolean = false,
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),   // タスク作成日時
+    val dueAt: Long? = null                             // 期限日時
 )
