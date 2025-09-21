@@ -49,6 +49,29 @@ class TaskAdapter(
             textTitle.paintFlags and Paint.STRIKE_THRU_TEXT_FLAG.inv()
 
         textDate.text = formatTime(task.createdAt)
+        textDue.text = formatDue(task.dueAt)
+
+        val todayEnd = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY,23)
+            set(Calendar.MINUTE,59)
+            set(Calendar.SECOND,59)
+            set(Calendar.MILLISECOND,999)
+        }.timeInMillis
+
+        when {
+            task.done -> {
+                textDue.setTextColor("#999999".toColorInt())   // 完了はグレー
+            }
+            task.dueAt != null && task.dueAt < todayEnd -> {              // 期限切れ　赤色
+                textDue.setTextColor("#FF0000".toColorInt())
+            }
+            task.dueAt != null && task.dueAt <= todayEnd -> {             // 今日が期限 オレンジ色
+                textDue.setTextColor("#FF8800".toColorInt())
+            }
+            else -> {
+                textDue.setTextColor("#000000".toColorInt())   // 期限未設定 or 期限がまだ先　灰色
+            }
+        }
 
         textDue.text = formatDue(task.dueAt)
 
