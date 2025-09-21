@@ -15,8 +15,6 @@ import com.example.todoapp.ui.TaskViewModel
 import kotlinx.coroutines.launch
 import android.app.DatePickerDialog
 import java.util.Calendar
-import android.util.Log
-import java.util.Date
 
 //MainActivity.ktはアプリの画面制御。UIとユーザー操作のロジックが中心
 // ↓関係図
