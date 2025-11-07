@@ -27,7 +27,7 @@ class TaskAdapter(
 
     override fun getItem(position: Int): Any = tasks[position]  // position → ListView の「何番目の行か」を示す番号 戻り値型は Anyはどんな型でも返してよい
 
-    override fun getItemId(position: Int): Long = tasks[position].id.toLong()   // toLong()でInt型からLong型に変換している
+    override fun getItemId(position: Int): Long = tasks[position].id.hashCode().toLong()   // toLong()でInt型からLong型に変換している
 
     override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {         //　convertViewにはview型のため画面に置ける一行分のUI部品オブジェクトが入る、 parentには、その一行を入れる入れ物（今回はListViewのこと）　※View型とは、「画面に置けるもの」AndroidではUI部品全てがViewを継承している
         val view = convertView ?: LayoutInflater.from(context).inflate(R.layout.list_item_task, parent, false)      // convertViewが再利用不可であれば、LayoutInflater....で「list_item_task.xml を読み込んで、1行ぶんのViewオブジェクトを新しく作る」処理をしている
@@ -74,28 +74,6 @@ class TaskAdapter(
         }
 
         textDue.text = formatDue(task.dueAt)
-
-        val todayEnd = Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY,23)
-            set(Calendar.MINUTE,59)
-            set(Calendar.SECOND,59)
-            set(Calendar.MILLISECOND,999)
-        }.timeInMillis
-
-        when {
-            task.done -> {
-                textDue.setTextColor("#999999".toColorInt())   // 完了はグレー
-            }
-            task.dueAt != null && task.dueAt < todayEnd -> {              // 期限切れ　赤色
-                textDue.setTextColor("#FF0000".toColorInt())
-            }
-            task.dueAt != null && task.dueAt <= todayEnd -> {             // 今日が期限 オレンジ色
-                textDue.setTextColor("#FF8800".toColorInt())
-            }
-            else -> {
-                textDue.setTextColor("#000000".toColorInt())   // 期限未設定 or 期限がまだ先　灰色
-            }
-        }
 
         checkBox.setOnCheckedChangeListener(null)       // 一度チェックボックスに設定されているリスナを削除　　ListView では行の View を再利用しているので、リスナが残っている可能性があるので。　リスナとはイベントが起きた時に呼び出される処理を登録しておく仕組み
         checkBox.setOnCheckedChangeListener {_, isChecked ->       // ユーザーがチェックボックスを操作して、ON/OFF が変わった瞬間に呼ばれる処理
