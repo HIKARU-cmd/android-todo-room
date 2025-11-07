@@ -1,38 +1,47 @@
 package com.example.todoapp.ui
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.todoapp.data.AppDatabase
 import com.example.todoapp.data.Task
+import com.example.todoapp.data.remote.FirestoreRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 // TaskViewModel.ktはデータの橋渡し役、UI(画面）とDBのやりとりを綺麗にわけるために存在
-class TaskViewModel(app: Application) : AndroidViewModel(app) {             // 継承したAndroidViewModelにもコンストラクタで初期化したappをわたしている
-    private val dao = AppDatabase.get(app).taskDao()                        // TaskViewModel.ktのgetでいんすたんすを作成し、タスク処理関連をまとめたDAOを取り出す
+class TaskViewModel(
+    private val repo: FirestoreRepository = FirestoreRepository()
+) : ViewModel() {
 
-    val tasks: Flow<List<Task>> = dao.observeALL()                          // Flow<List<Task>> タスクの更新に追従できる　非同期データストリーム（次々データが流れてくるイメージ）
+    // Firestore -> アプリ側でソート（期限から作成日以降）
+    val tasks: Flow<List<Task>> = repo.observeAll().map { list ->
+        list.sortedWith(
+            compareBy<Task> { t -> t.dueAt == null}         // 未設定は最後
+                .thenBy { t -> t.dueAt ?: Long.MAX_VALUE }  // 期限は近い順
+                .thenByDescending { t -> t.createdAt }      // 作成日は新しい順
+        )
+    }
+
 
     fun add(title: String) = viewModelScope.launch {                        // add関数が呼ばれたら、バックグラウンドでタスクをDBに保存する処理を開始する
         if(title.isBlank()) return@launch                                   // タスク名が空ならこのコルーチンから抜ける
-        dao.insert(Task(title = title))
+        repo.add(title)
     }
 
-    fun deleteById(id: Int) = viewModelScope.launch {
-        dao.deleteById(id)
+    fun deleteById(id: String) = viewModelScope.launch {
+        repo.delete(id)
     }
 
-    fun updateDone(id: Int,done: Boolean) = viewModelScope.launch {
-        dao.updateDone(id, done)
+    fun updateDone(id: String, done: Boolean) = viewModelScope.launch {
+        repo.updateDone(id, done)
     }
 
-    fun updateTitle(id: Int,title: String) = viewModelScope.launch {
-        if(title.isBlank()) return@launch                                   // タスク名が空ならこのコルーチンから抜ける
-        dao.updateTitle(id, title)
+    fun updateTitle(id: String,newTitle: String) = viewModelScope.launch {
+        if(newTitle.isBlank()) return@launch                                   // タスク名が空ならこのコルーチンから抜ける
+        repo.updateTitle(id, newTitle)
     }
 
-    fun updateDueAt(id: Int,dueAt: Long?) = viewModelScope.launch {
-        dao.updateDueAt(id, dueAt)
+    fun updateDueAt(id: String,dueAt: Long?) = viewModelScope.launch {
+        repo.updateDueAt(id, dueAt)
     }
 }

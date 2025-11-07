@@ -45,7 +45,7 @@ class MainActivity : AppCompatActivity() {  // AppCompatActivityクラスを継�
         val addButton: Button = findViewById(R.id.addButton)
 
         // 起動時にDBからメモリへ読み込み DBが変更するたびにListViewが更新される
-        lifecycleScope.launch {                                                                 // lifecycleScopeはAndoroid画面のライフサイクルに合わせて自動で動きを制御する機能、launchは非同期的に処理を進める、
+        lifecycleScope.launch {                                                                 // lifecycleScopeはandroid画面のライフサイクルに合わせて自動で動きを制御する機能、launchは非同期的に処理を進める、
             viewModel.tasks.collect { rows ->                                                   //  viewModel.tasksはFlow<List<Task>>型(リアルタイムにデータ変更を通知する仕組み)　rowsは最新のタスクリストDBの状態によって更新する
                 currentRows = rows                                                              // .collect { ... -> ... }の書き方は基本的にFlow型のみデータを受け取れる
                 adapter = TaskAdapter(this@MainActivity, rows) { task, isChecked ->      // ここのtaskはチェックされた（または外された）行に対応する Task オブジェクト
@@ -124,7 +124,7 @@ class MainActivity : AppCompatActivity() {  // AppCompatActivityクラスを継�
     }
 
     // タスクタイトル編集
-    private fun showEditDialog(taskId: Int, currentTitle: String) {
+    private fun showEditDialog(taskId: String, currentTitle: String) {
         val input = EditText(this).apply {
             setText(currentTitle)
             setSelection(currentTitle.length)
