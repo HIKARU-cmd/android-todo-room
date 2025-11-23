@@ -4,6 +4,7 @@ data class Task (                                       // data Classは通常�
     val id: String = "",
     val title: String,
     val done: Boolean = false,
-    val createdAt: Long = System.currentTimeMillis(),   // タスク作成日時
-    val dueAt: Long? = null                             // 期限日時
+    val createdAt: Long = System.currentTimeMillis(),
+    val dueAt: Long? = null,
+    val memo: String = ""
 )
