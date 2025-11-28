@@ -52,10 +52,6 @@ class FirestoreRepository (
         col().document().set(data).await()
     }
 
-    suspend fun updateDone(id:String, done:Boolean) {
-        col().document(id).update("done", done).await()
-    }
-
     suspend fun updateTitle(id:String, title:String) {
         col().document(id).update("title", title).await()
     }
@@ -66,6 +62,10 @@ class FirestoreRepository (
 
     suspend fun updateDueAt(id:String, dueAt:Long?) {
         col().document(id).update("dueAt", dueAt).await()
+    }
+
+    suspend fun updateDone(id:String, done:Boolean) {
+        col().document(id).update("done", done).await()
     }
 
    suspend fun delete(id:String) {

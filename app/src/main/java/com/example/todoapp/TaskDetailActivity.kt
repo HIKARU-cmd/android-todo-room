@@ -1,5 +1,6 @@
 package com.example.todoapp
 
+import android.app.DatePickerDialog
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
@@ -8,12 +9,17 @@ import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.example.todoapp.data.Task
+import com.example.todoapp.data.remote.FirestoreRepository
+import kotlinx.coroutines.launch
+import java.util.Calendar
 
 class TaskDetailActivity : AppCompatActivity() {
 
-    // Intentで値を渡すためのkey
+    // Intentで値を渡すためのkeyを設定
     companion object {
         private const val EXTRA_TASK_ID = "task_id"
         private const val EXTRA_TITLE = "title"
@@ -34,7 +40,7 @@ class TaskDetailActivity : AppCompatActivity() {
         }
     }
 
-    // 画面上のViewへの参照
+    // 画面上のUI部品操作のための変数
     private lateinit var editTitle: EditText
     private lateinit var editMemo: EditText
     private lateinit var textDue: TextView
@@ -42,7 +48,7 @@ class TaskDetailActivity : AppCompatActivity() {
     private lateinit var buttonSave: Button
     private lateinit var checkDone: CheckBox
 
-    // 受け取った値を保持する変数
+    // 詳細画面に渡された値を保持する変数
     private var taskId: String = ""
     private var dueAt: Long? = null
     private var done: Boolean = false
@@ -61,9 +67,10 @@ class TaskDetailActivity : AppCompatActivity() {
 
         // Intentから値を取り出す
         taskId = intent.getStringExtra(EXTRA_TASK_ID) ?: ""
-        val memo = intent.getStringExtra(EXTRA_TITLE) ?: ""
+        val title = intent.getStringExtra(EXTRA_TITLE) ?: ""
+        val memo = intent.getStringExtra(EXTRA_MEMO) ?: ""
         dueAt = if (intent.hasExtra(EXTRA_DUE_AT)) {
-            intent.getLongExtra(EXTRA_DUE_AT, 0L)
+            intent.getLongExtra(EXTRA_DUE_AT, 0L)   // Longはnullを許容できないため、hasExtraで未設定を区別
         } else {
             null
         }
@@ -75,14 +82,31 @@ class TaskDetailActivity : AppCompatActivity() {
         checkDone.isChecked = done
         textDue.text = formatDueText(dueAt)
 
-        // まだ中身は空のボタン処理　後で実装
+        // 期限変更ボタン　
         buttonChangeDue.setOnClickListener {
-            // ここで日付変更ダイアログを開く
+            showDatePicker { pickedMillis ->
+                dueAt = pickedMillis
+                textDue.text = formatDueText(dueAt)
+            }
         }
 
         buttonSave.setOnClickListener {
-            // ここでFirestore更新を行う
-            finish() // とりあえず画面を閉じる
+            val newTitle = editTitle.text.toString().trim()
+            val newMemo = editMemo.text.toString().trim()
+
+            if (newTitle.isEmpty()) {
+               Toast.makeText(this, "タイトルを入力してください", Toast.LENGTH_SHORT).show()
+               return@setOnClickListener
+            }
+
+            lifecycleScope.launch {
+                val repo = FirestoreRepository()
+                repo.updateTitle(taskId, newTitle)
+                repo.updateMemo(taskId, newMemo)
+                repo.updateDueAt(taskId, dueAt)
+                repo.updateDone(taskId, done)
+            }
+            finish()
         }
     }
 
@@ -93,5 +117,22 @@ class TaskDetailActivity : AppCompatActivity() {
         } else {
             "期限：$dueAt"
         }
+    }
+
+    // タスク期限の設定
+    private fun showDatePicker(onPicked: (Long?) -> Unit) {
+        val cal = Calendar.getInstance()
+        DatePickerDialog(
+            this,
+            { _, y, m, d ->
+                cal.set(Calendar.YEAR, y)
+                cal.set(Calendar.MONTH, m)
+                cal.set(Calendar.DAY_OF_MONTH, d)
+                onPicked(cal.timeInMillis)
+            },
+            cal.get(Calendar.YEAR),
+            cal.get(Calendar.MONTH),
+            cal.get(Calendar.DAY_OF_MONTH)
+        ).show()
     }
 }
