@@ -61,6 +61,12 @@ class MainActivity : AppCompatActivity() {  // AppCompatActivityクラスを継�
             handleAddTask(taskInput)
         }
 
+        // タスククリック処理
+        tasklist.setOnItemClickListener { _, _, position, _ ->
+            val task = adapter.getItem(position)
+            TaskDetailActivity.start(this, task)
+        }
+
         // タスク長押し処理
         tasklist.setOnItemLongClickListener { _, _, position, _ ->                              // positionはListViewの中で何番目かを表す
             handleLongClick(position)

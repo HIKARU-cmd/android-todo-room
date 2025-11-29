@@ -25,7 +25,7 @@ class TaskAdapter(
 
     override fun getCount(): Int = tasks.size       // overrideは親クラス(BaseAdapter)のgetCount()というメソッドの上書きしている　tasks.sizeでタスクの件数の表す
 
-    override fun getItem(position: Int): Any = tasks[position]  // position → ListView の「何番目の行か」を示す番号 戻り値型は Anyはどんな型でも返してよい
+    override fun getItem(position: Int): Task = tasks[position]  // position → ListView の「何番目の行か」を示す番号 戻り値型は Anyはどんな型でも返してよい
 
     override fun getItemId(position: Int): Long = tasks[position].id.hashCode().toLong()   // toLong()でInt型からLong型に変換している
 
