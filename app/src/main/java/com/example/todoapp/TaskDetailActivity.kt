@@ -57,6 +57,9 @@ class TaskDetailActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_task_detail)
 
+        // 戻るボタン
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+
         // ViewをfindViewById
         editTitle = findViewById(R.id.editTitle)
         editMemo = findViewById(R.id.editMemo)
@@ -134,5 +137,10 @@ class TaskDetailActivity : AppCompatActivity() {
             cal.get(Calendar.MONTH),
             cal.get(Calendar.DAY_OF_MONTH)
         ).show()
+    }
+
+    override fun onSupportNavigateUp(): Boolean {
+        finish()
+        return true
     }
 }
