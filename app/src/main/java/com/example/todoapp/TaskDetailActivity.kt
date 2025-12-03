@@ -16,6 +16,10 @@ import com.example.todoapp.data.Task
 import com.example.todoapp.data.remote.FirestoreRepository
 import kotlinx.coroutines.launch
 import java.util.Calendar
+import java.util.Date
+import java.util.Locale
+import java.text.SimpleDateFormat
+
 
 class TaskDetailActivity : AppCompatActivity() {
 
@@ -114,11 +118,15 @@ class TaskDetailActivity : AppCompatActivity() {
     }
 
     // 期限表示用のフォーマット
+    private val dateFormat = SimpleDateFormat("yyyy/MM/dd", Locale.JAPAN)
+
     private fun formatDueText(dueAt: Long?): String {
         return if(dueAt == null){
             "期限：未設定"
         } else {
-            "期限：$dueAt"
+            val date = Date(dueAt)
+            val formatted = dateFormat.format(date)
+            "期限：$formatted"
         }
     }
 
