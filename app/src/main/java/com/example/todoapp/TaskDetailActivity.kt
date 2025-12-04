@@ -19,6 +19,7 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import java.text.SimpleDateFormat
+import android.util.Log
 
 
 class TaskDetailActivity : AppCompatActivity() {
@@ -37,7 +38,9 @@ class TaskDetailActivity : AppCompatActivity() {
                 putExtra(EXTRA_TASK_ID, task.id)
                 putExtra(EXTRA_TITLE, task.title)
                 putExtra(EXTRA_MEMO, task.memo)
-                putExtra(EXTRA_DUE_AT, task.dueAt)
+                if (task.dueAt != null) {               // nullの場合はputExtraを呼ばない　keyが存在しない状態にする
+                    putExtra(EXTRA_DUE_AT, task.dueAt)
+                }
                 putExtra(EXTRA_DONE, task.done)
             }
             context.startActivity(intent)
@@ -60,6 +63,7 @@ class TaskDetailActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_task_detail)
+        // Log.d("TaskDetail", "EXTRA_DUE_AT exists? $dueAt")
 
         // 戻るボタン
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
@@ -81,7 +85,7 @@ class TaskDetailActivity : AppCompatActivity() {
         } else {
             null
         }
-        done = intent.getBooleanExtra(EXTRA_DONE, false)
+         done = intent.getBooleanExtra(EXTRA_DONE, false)
 
         // 画面へ反映
         editTitle.setText(title)
