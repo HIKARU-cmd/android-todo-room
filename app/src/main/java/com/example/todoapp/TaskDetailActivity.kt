@@ -89,6 +89,11 @@ class TaskDetailActivity : AppCompatActivity() {
         checkDone.isChecked = done
         textDue.text = formatDueText(dueAt)
 
+        // 完了フラグの変更
+        checkDone.setOnCheckedChangeListener {_, ischecked ->   // 保存ボタンでfirebaseに保存する仕様
+            done = ischecked
+        }
+
         // 期限変更ボタン　
         buttonChangeDue.setOnClickListener {
             showDatePicker { pickedMillis ->
