@@ -52,6 +52,7 @@ class TaskDetailActivity : AppCompatActivity() {
     private lateinit var editMemo: EditText
     private lateinit var textDue: TextView
     private lateinit var buttonChangeDue: Button
+    private lateinit var buttonClearDue: Button
     private lateinit var buttonSave: Button
     private lateinit var checkDone: CheckBox
 
@@ -63,7 +64,6 @@ class TaskDetailActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_task_detail)
-        // Log.d("TaskDetail", "EXTRA_DUE_AT exists? $dueAt")
 
         // 戻るボタン
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
@@ -73,6 +73,7 @@ class TaskDetailActivity : AppCompatActivity() {
         editMemo = findViewById(R.id.editMemo)
         textDue = findViewById(R.id.textDue)
         buttonChangeDue = findViewById(R.id.buttonChangeDue)
+        buttonClearDue = findViewById(R.id.buttonClearDue)
         buttonSave = findViewById(R.id.buttonSave)
         checkDone = findViewById(R.id.checkDone)
 
@@ -106,6 +107,15 @@ class TaskDetailActivity : AppCompatActivity() {
             }
         }
 
+        // 期限クリアボタン　
+        buttonClearDue.setOnClickListener {
+            dueAt = null
+            textDue.text = formatDueText(dueAt)
+            Toast.makeText(this@TaskDetailActivity, "期限をクリアしました", Toast.LENGTH_SHORT).show()
+        }
+
+
+        // 保存ボタン
         buttonSave.setOnClickListener {
             val newTitle = editTitle.text.toString().trim()
             val newMemo = editMemo.text.toString().trim()
