@@ -89,85 +89,15 @@ class MainActivity : AppCompatActivity() {  // AppCompatActivityクラスを継�
     private fun handleLongClick(position: Int) {
         val task = currentRows[position] // 画面表示から削除の対象を特定
 
+        //  削除
         AlertDialog.Builder(this)
-            .setTitle("操作の選択")
-            .setItems(arrayOf("編集","期限を設定","期限をクリア","削除")) { _, which ->
-                when (which) {
-                    0 -> showEditDialog(task.id, task.title) // 編集先へ遷移
-
-                    1 -> {      // 期限を設定
-                        showDatePicker { pickedMillis ->        // fun showDatePickerのonPicked(cal.timeInMillis)でpickedMillisにcal.timeInMillisが入り以降の処理が実行
-                            val cal = Calendar.getInstance().apply {
-                                timeInMillis = pickedMillis
-                                set(Calendar.HOUR_OF_DAY, 23)
-                                set(Calendar.MINUTE, 59)
-                                set(Calendar.SECOND, 59)
-                                set(Calendar.MILLISECOND, 999)
-                            }
-                            viewModel.updateDueAt(task.id, cal.timeInMillis)
-                            Toast.makeText(this@MainActivity, "期限を設定しました", Toast.LENGTH_SHORT).show()
-                        }
-                    }
-
-                    2 -> {      // 期限のクリア
-                        viewModel.updateDueAt(task.id, null)
-                        Toast.makeText(this@MainActivity, "期限をクリアしました", Toast.LENGTH_SHORT).show()
-                    }
-
-                    3 -> {      //  削除
-                        AlertDialog.Builder(this)
-                            .setTitle("削除の確認")
-                            .setMessage("「${task.title}」を削除してもよろしいですか？")
-                            .setPositiveButton("削除") { _, _ ->
-                                viewModel.deleteById(task.id)
-                                Toast.makeText(this@MainActivity, "削除しました", Toast.LENGTH_SHORT).show()
-                            }
-                            .setNegativeButton("キャンセル", null)
-                            .show()
-                    }
-                }
-            }
-            .show()
-    }
-
-    // タスクタイトル編集
-    private fun showEditDialog(taskId: String, currentTitle: String) {
-        val input = EditText(this).apply {
-            setText(currentTitle)
-            setSelection(currentTitle.length)
-            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
-        }
-        AlertDialog.Builder(this)
-            .setTitle("タイトルの編集")
-            .setView(input)
-            .setPositiveButton("保存") { _, _ ->
-                val newTitle = input.text.toString().trim()
-
-                if (newTitle.isBlank()) {
-                    Toast.makeText(this@MainActivity, "タスクを入力してください", Toast.LENGTH_SHORT).show()
-                } else {
-                    viewModel.updateTitle(taskId, newTitle)
-                    Toast.makeText(this@MainActivity, "更新しました", Toast.LENGTH_SHORT).show()
-                }
+            .setTitle("削除の確認")
+            .setMessage("「${task.title}」を削除してもよろしいですか？")
+            .setPositiveButton("削除") { _, _ ->
+                viewModel.deleteById(task.id)
+                Toast.makeText(this@MainActivity, "削除しました", Toast.LENGTH_SHORT).show()
             }
             .setNegativeButton("キャンセル", null)
             .show()
-    }
-
-    // タスク期限の設定
-    private fun showDatePicker(onPicked: (Long) -> Unit) {
-        val cal = Calendar.getInstance()    // Calendarオブジェクトを生成
-        DatePickerDialog(           // Android 標準の日付選択ダイアログを生成　引き数４個
-            this,
-            { _, y, m, d ->         // ユーザー操作（日付選択）によって、ここの処理{ _, y, m, d ->・・が実行
-                cal.set(Calendar.YEAR, y)
-                cal.set(Calendar.MONTH, m)
-                cal.set(Calendar.DAY_OF_MONTH, d)
-                onPicked(cal.timeInMillis)      // calの結果をミリ秒にして、onPicked（呼び出し元のラムダ式）に渡す
-            },
-            cal.get(Calendar.YEAR),
-            cal.get(Calendar.MONTH),
-            cal.get(Calendar.DAY_OF_MONTH)
-        ).show()
     }
 }
