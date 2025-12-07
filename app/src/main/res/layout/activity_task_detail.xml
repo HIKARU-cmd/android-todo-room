@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingTop="?attr/actionBarSize">
+
+        <!-- タイトル -->
+        <EditText
+            android:id="@+id/editTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="タイトル"
+            android:textSize="18sp" />
+
+        <!-- 完了チェック -->
+        <CheckBox
+            android:id="@+id/checkDone"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="完了" />
+
+        <!-- 期限表示 -->
+        <TextView
+            android:id="@+id/textDue"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingTop="12dp"
+            android:text="期限: 未設定"
+            android:textSize="14sp" />
+
+        <!-- 期限変更ボタン -->
+        <Button
+            android:id="@+id/buttonChangeDue"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="期限を変更" />
+
+        <!-- 期限クリアボタン -->
+        <Button
+            android:id="@+id/buttonClearDue"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="期限をクリア" />
+
+        <!-- メモ入力欄 -->
+        <EditText
+            android:id="@+id/editMemo"
+            android:layout_width="match_parent"
+            android:layout_height="150dp"
+            android:background="@android:drawable/edit_text"
+            android:gravity="top"
+            android:hint="メモを入力"
+            android:paddingTop="8dp"
+            android:textSize="16sp" />
+
+        <!-- 保存ボタン -->
+        <Button
+            android:id="@+id/buttonSave"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="保存する" />
+
+    </LinearLayout>
+</ScrollView>

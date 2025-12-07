@@ -1,0 +1,173 @@
+package com.example.todoapp
+
+import android.app.DatePickerDialog
+import android.content.Context
+import android.content.Intent
+import android.os.Bundle
+import android.os.PersistableBundle
+import android.widget.Button
+import android.widget.CheckBox
+import android.widget.EditText
+import android.widget.TextView
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
+import com.example.todoapp.data.Task
+import com.example.todoapp.data.remote.FirestoreRepository
+import kotlinx.coroutines.launch
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
+import java.text.SimpleDateFormat
+import android.util.Log
+
+
+class TaskDetailActivity : AppCompatActivity() {
+
+    // Intentで値を渡すためのkeyを設定
+    companion object {
+        private const val EXTRA_TASK_ID = "task_id"
+        private const val EXTRA_TITLE = "title"
+        private const val EXTRA_MEMO = "memo"
+        private const val EXTRA_DUE_AT = "dueAt"
+        private const val EXTRA_DONE = "done"
+
+        // 呼び出し側から使用するhelper
+        fun start(context: Context, task:Task) {
+            val intent = Intent(context,TaskDetailActivity::class.java).apply {
+                putExtra(EXTRA_TASK_ID, task.id)
+                putExtra(EXTRA_TITLE, task.title)
+                putExtra(EXTRA_MEMO, task.memo)
+                if (task.dueAt != null) {               // nullの場合はputExtraを呼ばない　keyが存在しない状態にする
+                    putExtra(EXTRA_DUE_AT, task.dueAt)
+                }
+                putExtra(EXTRA_DONE, task.done)
+            }
+            context.startActivity(intent)
+        }
+    }
+
+    // 画面上のUI部品操作のための変数
+    private lateinit var editTitle: EditText
+    private lateinit var editMemo: EditText
+    private lateinit var textDue: TextView
+    private lateinit var buttonChangeDue: Button
+    private lateinit var buttonClearDue: Button
+    private lateinit var buttonSave: Button
+    private lateinit var checkDone: CheckBox
+
+    // 詳細画面に渡された値を保持する変数
+    private var taskId: String = ""
+    private var dueAt: Long? = null
+    private var done: Boolean = false
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_task_detail)
+
+        // 戻るボタン
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+
+        // ViewをfindViewById
+        editTitle = findViewById(R.id.editTitle)
+        editMemo = findViewById(R.id.editMemo)
+        textDue = findViewById(R.id.textDue)
+        buttonChangeDue = findViewById(R.id.buttonChangeDue)
+        buttonClearDue = findViewById(R.id.buttonClearDue)
+        buttonSave = findViewById(R.id.buttonSave)
+        checkDone = findViewById(R.id.checkDone)
+
+        // Intentから値を取り出す
+        taskId = intent.getStringExtra(EXTRA_TASK_ID) ?: ""
+        val title = intent.getStringExtra(EXTRA_TITLE) ?: ""
+        val memo = intent.getStringExtra(EXTRA_MEMO) ?: ""
+        dueAt = if (intent.hasExtra(EXTRA_DUE_AT)) {
+            intent.getLongExtra(EXTRA_DUE_AT, 0L)   // Longはnullを許容できないため、hasExtraで未設定を区別
+        } else {
+            null
+        }
+         done = intent.getBooleanExtra(EXTRA_DONE, false)
+
+        // 画面へ反映
+        editTitle.setText(title)
+        editMemo.setText(memo)
+        checkDone.isChecked = done
+        textDue.text = formatDueText(dueAt)
+
+        // 完了フラグの変更
+        checkDone.setOnCheckedChangeListener {_, ischecked ->   // 保存ボタンでfirebaseに保存する仕様
+            done = ischecked
+        }
+
+        // 期限変更ボタン　
+        buttonChangeDue.setOnClickListener {
+            showDatePicker { pickedMillis ->
+                dueAt = pickedMillis
+                textDue.text = formatDueText(dueAt)
+            }
+        }
+
+        // 期限クリアボタン　
+        buttonClearDue.setOnClickListener {
+            dueAt = null
+            textDue.text = formatDueText(dueAt)
+            Toast.makeText(this@TaskDetailActivity, "期限をクリアしました", Toast.LENGTH_SHORT).show()
+        }
+
+
+        // 保存ボタン
+        buttonSave.setOnClickListener {
+            val newTitle = editTitle.text.toString().trim()
+            val newMemo = editMemo.text.toString().trim()
+
+            if (newTitle.isEmpty()) {
+               Toast.makeText(this, "タイトルを入力してください", Toast.LENGTH_SHORT).show()
+               return@setOnClickListener
+            }
+
+            lifecycleScope.launch {
+                val repo = FirestoreRepository()
+                repo.updateTitle(taskId, newTitle)
+                repo.updateMemo(taskId, newMemo)
+                repo.updateDueAt(taskId, dueAt)
+                repo.updateDone(taskId, done)
+            }
+            finish()
+        }
+    }
+
+    // 期限表示用のフォーマット
+    private val dateFormat = SimpleDateFormat("yyyy/MM/dd", Locale.JAPAN)
+
+    private fun formatDueText(dueAt: Long?): String {
+        return if(dueAt == null){
+            "期限：未設定"
+        } else {
+            val date = Date(dueAt)
+            val formatted = dateFormat.format(date)
+            "期限：$formatted"
+        }
+    }
+
+    // タスク期限の設定
+    private fun showDatePicker(onPicked: (Long?) -> Unit) {
+        val cal = Calendar.getInstance()
+        DatePickerDialog(
+            this,
+            { _, y, m, d ->
+                cal.set(Calendar.YEAR, y)
+                cal.set(Calendar.MONTH, m)
+                cal.set(Calendar.DAY_OF_MONTH, d)
+                onPicked(cal.timeInMillis)
+            },
+            cal.get(Calendar.YEAR),
+            cal.get(Calendar.MONTH),
+            cal.get(Calendar.DAY_OF_MONTH)
+        ).show()
+    }
+
+    override fun onSupportNavigateUp(): Boolean {
+        finish()
+        return true
+    }
+}
