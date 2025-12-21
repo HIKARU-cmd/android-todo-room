@@ -13,22 +13,7 @@ import androidx.lifecycle.lifecycleScope
 import com.example.todoapp.data.Task
 import com.example.todoapp.ui.TaskViewModel
 import kotlinx.coroutines.launch
-import android.app.DatePickerDialog
-import android.util.Log
-import java.util.Calendar
-
-//MainActivity.ktはアプリの画面制御。UIとユーザー操作のロジックが中心
-// ↓関係図
-// MainActivity.kt
-// ├─ 入力 → dao.insert(Task(...))
-// ├─ 表示 ← dao.observeALL() → ListView
-// │                             ↑ TaskAdapter.kt で View化
-// ├─ 削除 → dao.deleteById(id)
-// │
-// ├─ DB接続 → AppDatabase.kt（Room本体）
-// │                 └─ TaskDao.kt（SQL操作）
-// │                 └─ Task.kt（データの形）
-
+import com.google.firebase.auth.FirebaseAuth
 
 class MainActivity : AppCompatActivity() {  // AppCompatActivityクラスを継承、Androidの基本的な画面操作が使える
 
@@ -39,20 +24,22 @@ class MainActivity : AppCompatActivity() {  // AppCompatActivityクラスを継�
 
     override fun onCreate(savedInstanceState: Bundle?) {    // onCreateはこの画面が初めて表示されるときに実行される処理、？はnullを許容、overrideはスーパークラス(AppCompatActivity)で定義されている関数を上書きするという意味
         super.onCreate(savedInstanceState)                  // superはスーパークラスを指す、つまりスーパークラスのonCreateを呼び出している。Androidの画面として正常に動作するための準備をスーパークラスに任せる部分
-        setContentView(R.layout.activity_main)              // 画面に表示するレイアウト(XMLファイル)を指定する
+        FirebaseAuth.getInstance().signInAnonymously()      // 未ログインの場合、匿名認証を実施する
 
-        val taskInput: EditText = findViewById(R.id.taskInput)   // 画面にある部品をコードで操作できるように変数に代入。UI要素を取得している
+        setContentView(R.layout.activity_main)
+
+        val taskInput: EditText = findViewById(R.id.taskInput)
         val tasklist: ListView = findViewById(R.id.tasklist)
         val addButton: Button = findViewById(R.id.addButton)
 
         // 起動時にDBからメモリへ読み込み DBが変更するたびにListViewが更新される
-        lifecycleScope.launch {                                                                 // lifecycleScopeはandroid画面のライフサイクルに合わせて自動で動きを制御する機能、launchは非同期的に処理を進める、
-            viewModel.tasks.collect { rows ->                                                   //  viewModel.tasksはFlow<List<Task>>型(リアルタイムにデータ変更を通知する仕組み)　rowsは最新のタスクリストDBの状態によって更新する
-                currentRows = rows                                                              // .collect { ... -> ... }の書き方は基本的にFlow型のみデータを受け取れる
-                adapter = TaskAdapter(this@MainActivity, rows) { task, isChecked ->      // ここのtaskはチェックされた（または外された）行に対応する Task オブジェクト
-                    viewModel.updateDone(task.id, isChecked)                                        // { task, isChecked ->...}は三つ目の引数として、TaskAdapterに処理は実行せずにコードのまま渡される、
-                }                                                                               // isCheckedはチェックボックスがオンかオフかを表すBoolean型　　チェックされていれば true外されていれば false
-                tasklist.adapter = adapter                                                      // .adapter = adapter で、ListView にアダプター（TaskAdapter）をセットする。
+        lifecycleScope.launch {
+            viewModel.tasks.collect { rows ->
+                currentRows = rows
+                adapter = TaskAdapter(this@MainActivity, rows) { task, isChecked ->
+                    viewModel.updateDone(task.id, isChecked)
+                }
+                tasklist.adapter = adapter
             }
         }
 

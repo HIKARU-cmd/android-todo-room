@@ -15,73 +15,83 @@ import java.util.Date
 import java.util.Locale
 import androidx.core.graphics.toColorInt
 
-
 // リスト変換用の変換処理、TaskデータをListViewに一軒ずつ見た目として表示するViewに変換するクラスのこと(データをViewに変換)
 class TaskAdapter(
     private val context: Context,
     private val tasks: List<Task>,
-    private val onCheckedChange: (Task, Boolean) -> Unit                // unitは戻り値無しの関数 MainActivityでラムダ式で処理が渡される。　ここの変数onCheckedChangeが実行っされるタイミングで引数として受け取った処理が実行される
-) : BaseAdapter() {         // クラスの継承
+    private val onCheckedChange: (Task, Boolean) -> Unit
+) : BaseAdapter() {
 
-    override fun getCount(): Int = tasks.size       // overrideは親クラス(BaseAdapter)のgetCount()というメソッドの上書きしている　tasks.sizeでタスクの件数の表す
+    private class TaskViewHolder(
+        val checkBox: CheckBox,
+        val textTitle: TextView,
+        val textDate: TextView,
+        val textDue: TextView
+    )
 
-    override fun getItem(position: Int): Task = tasks[position]  // position → ListView の「何番目の行か」を示す番号 戻り値型は Anyはどんな型でも返してよい
+    private val todayStart = getTodayStartMillis()
+    private val todayEnd = getTodayEndMillis()
 
-    override fun getItemId(position: Int): Long = tasks[position].id.hashCode().toLong()   // toLong()でInt型からLong型に変換している
+    override fun getCount(): Int = tasks.size
 
-    override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {         //　convertViewにはview型のため画面に置ける一行分のUI部品オブジェクトが入る、 parentには、その一行を入れる入れ物（今回はListViewのこと）　※View型とは、「画面に置けるもの」AndroidではUI部品全てがViewを継承している
-        val view = convertView ?: LayoutInflater.from(context).inflate(R.layout.list_item_task, parent, false)      // convertViewが再利用不可であれば、LayoutInflater....で「list_item_task.xml を読み込んで、1行ぶんのViewオブジェクトを新しく作る」処理をしている
+    override fun getItem(position: Int): Task = tasks[position]
 
-        val checkBox = view.findViewById<CheckBox>(R.id.checkDone)      // viewは現在処理している一行分のView、その中からCheckBox部品を探して取り出す処理　　　※(R.id.checkDone)は型をCheckBoxとして取り出している
-        val textTitle = view.findViewById<TextView>(R.id.textTitle)
-        val textDate  = view.findViewById<TextView>(R.id.textDate)
-        val textDue  = view.findViewById<TextView>(R.id.textDue)
+    override fun getItemId(position: Int): Long = tasks[position].id.hashCode().toLong()
+    override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {
+        val view : View
+        val holder : TaskViewHolder
+
+        if (convertView == null) {
+            view = LayoutInflater.from(context)
+                .inflate(R.layout.list_item_task, parent, false)
+
+            holder = TaskViewHolder(
+                checkBox = view.findViewById(R.id.checkDone),
+                textTitle = view.findViewById(R.id.textTitle),
+                textDate  = view.findViewById(R.id.textDate),
+                textDue  = view.findViewById(R.id.textDue)
+            )
+            view.tag = holder
+        } else {
+            view = convertView
+            holder = view.tag as TaskViewHolder
+        }
 
         val task = tasks[position]
 
-        checkBox.isChecked = task.done      // チェックが入っているかどうかisCheckedはBoolean型
-        textTitle.text = task.title         // textTitle.text → TextView の表示文字を表すプロパティ
+        holder.checkBox.isChecked = task.done      // チェックが入っているかどうかisCheckedはBoolean型
+        holder.textTitle.text = task.title
+        holder.textDate.text = formatTime(task.createdAt)
+        holder.textDue.text = formatDue(task.dueAt)
 
         // 取り消し線の表示
-        textTitle.paintFlags = if (task.done)
-            textTitle.paintFlags or Paint.STRIKE_THRU_TEXT_FLAG
+        holder.textTitle.paintFlags = if (task.done)
+            holder.textTitle.paintFlags or Paint.STRIKE_THRU_TEXT_FLAG
         else
-            textTitle.paintFlags and Paint.STRIKE_THRU_TEXT_FLAG.inv()
-
-        textDate.text = formatTime(task.createdAt)
-        textDue.text = formatDue(task.dueAt)
-
-        val todayEnd = Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY,23)
-            set(Calendar.MINUTE,59)
-            set(Calendar.SECOND,59)
-            set(Calendar.MILLISECOND,999)
-        }.timeInMillis
+            holder.textTitle.paintFlags and Paint.STRIKE_THRU_TEXT_FLAG.inv()
 
         when {
             task.done -> {
-                textDue.setTextColor("#999999".toColorInt())   // 完了はグレー
+                holder.textDue.setTextColor("#999999".toColorInt())   // 完了：グレー
             }
-            task.dueAt != null && task.dueAt < todayEnd -> {              // 期限切れ　赤色
-                textDue.setTextColor("#FF0000".toColorInt())
+            task.dueAt != null && task.dueAt < todayStart -> {              // 期限切れ：赤色
+                holder.textDue.setTextColor("#FF0000".toColorInt())
             }
-            task.dueAt != null && task.dueAt <= todayEnd -> {             // 今日が期限 オレンジ色
-                textDue.setTextColor("#FF8800".toColorInt())
+            task.dueAt != null && task.dueAt <= todayEnd -> {             // 今日が期限：オレンジ色
+                holder.textDue.setTextColor("#FF8800".toColorInt())
             }
             else -> {
-                textDue.setTextColor("#000000".toColorInt())   // 期限未設定 or 期限がまだ先　灰色
+                holder.textDue.setTextColor("#000000".toColorInt())   // 期限未設定 or 期限が先：黒色
             }
         }
 
-        textDue.text = formatDue(task.dueAt)
-
-        checkBox.setOnCheckedChangeListener(null)       // 一度チェックボックスに設定されているリスナを削除　　ListView では行の View を再利用しているので、リスナが残っている可能性があるので。　リスナとはイベントが起きた時に呼び出される処理を登録しておく仕組み
-        checkBox.setOnCheckedChangeListener {_, isChecked ->       // ユーザーがチェックボックスを操作して、ON/OFF が変わった瞬間に呼ばれる処理
-            onCheckedChange(task, isChecked)                       // アダプタのコンストラクタで受け取った関数をここで呼び出している 第一引数: どのタスクか（task）第二引数: チェック状態（isChecked）
+        holder.checkBox.setOnCheckedChangeListener(null)       // 一度チェックボックスに設定されているリスナを削除　　ListView では行の View を再利用しているので、リスナが残っている可能性があるので。　リスナとはイベントが起きた時に呼び出される処理を登録しておく仕組み
+        holder.checkBox.setOnCheckedChangeListener {_, isChecked ->
+            onCheckedChange(task, isChecked)
         }
-
-        return view     // convertView が nullじゃない➡viewの中身は一行分のUI(View オブジェクト)　　　　　convertView が null　➡　XML（list_item_task.xml）から新しく作った 1行分のUI
+        return view
     }
+
 
     private fun formatTime(millis: Long?): String {
         if (millis == null || millis == 0L) return ""
@@ -95,4 +105,25 @@ class TaskAdapter(
         return "期限: " + df.format(Date(millis))
     }
 
+    private fun getTodayStartMillis(): Long {
+        val cal = Calendar.getInstance()
+
+        // 今日の00:00
+        cal.set(Calendar.HOUR_OF_DAY,0)
+        cal.set(Calendar.MINUTE,0)
+        cal.set(Calendar.SECOND,0)
+        cal.set(Calendar.MILLISECOND,0)
+        return cal.timeInMillis
+    }
+
+    private fun getTodayEndMillis(): Long {
+        val cal = Calendar.getInstance()
+
+        // 今日の23:59:59.999
+        cal.set(Calendar.HOUR_OF_DAY,23)
+        cal.set(Calendar.MINUTE,59)
+        cal.set(Calendar.SECOND,59)
+        cal.set(Calendar.MILLISECOND,999)
+        return cal.timeInMillis
+    }
 }

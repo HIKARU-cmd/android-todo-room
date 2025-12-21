@@ -13,7 +13,7 @@ class TaskViewModel(
     private val repo: FirestoreRepository = FirestoreRepository()
 ) : ViewModel() {
 
-    // Firestore -> アプリ側でソート（期限から作成日以降）
+    // tasks:Flowの設計図 tasks = 「observeAll → map → List<Task>」という設計図
     val tasks: Flow<List<Task>> = repo.observeAll().map { list ->
         list.sortedWith(
             compareBy<Task> { t -> t.dueAt == null}         // 未設定は最後

@@ -6,7 +6,6 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.firestore
 import com.example.todoapp.data.Task
 import com.google.firebase.firestore.DocumentSnapshot
-
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
@@ -29,14 +28,15 @@ class FirestoreRepository (
 
     // リアルタイム購読
     fun observeAll(): Flow<List<Task>> = callbackFlow {
-        val reg = col().addSnapshotListener { qs, e -> // qsはクエリ結果　reg:Firestore の監視リスナ-オブジェクト
+        val reg = col().addSnapshotListener { qs, e ->
             if (e != null) {
-                trySend(emptyList()); return@addSnapshotListener
+                Log.e("Firestore", "error", e)  // エラーハンドリング：後で実装（画面にエラー表示）
+                return@addSnapshotListener
             }
-            val list = qs?.documents?.mapNotNull { it.toTask() } ?: emptyList()     // FirestoreからのTaskドキュメントを<addSnapshotListener>から<Task>へ変換
+            val list = qs?.documents?.mapNotNull { it.toTask() } ?: emptyList()
             trySend(list)
         }
-        awaitClose{ reg.remove()}   // Firestore への監視を停止(
+        awaitClose{ reg.remove()}   // Firestore への監視を停止
     }
 
     // 追加（IDはfirestore自動生成）
