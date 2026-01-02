@@ -35,13 +35,4 @@ class TaskViewModel(
     fun updateDone(id: String, done: Boolean) = viewModelScope.launch {
         repo.updateDone(id, done)
     }
-
-    fun updateTitle(id: String,newTitle: String) = viewModelScope.launch {
-        if(newTitle.isBlank()) return@launch                                   // タスク名が空ならこのコルーチンから抜ける
-        repo.updateTitle(id, newTitle)
-    }
-
-    fun updateDueAt(id: String,dueAt: Long?) = viewModelScope.launch {
-        repo.updateDueAt(id, dueAt)
-    }
 }
