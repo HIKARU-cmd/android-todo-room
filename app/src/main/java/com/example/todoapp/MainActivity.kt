@@ -2,6 +2,7 @@ package com.example.todoapp
 
 import android.os.Bundle
 import android.text.InputType
+import android.util.Log
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ListView
@@ -43,16 +44,12 @@ class MainActivity : AppCompatActivity() {  // AppCompatActivityクラスを継�
 
         // 起動時にDBからメモリへ読み込み DBが変更するたびにListViewが更新される
         lifecycleScope.launch {
-            viewModel.tasks.collect { rows ->
-                currentRows = rows
+            viewModel.tasks.collect { rows ->       // Flowに新しいデータが流れるタイミングでコールバック関数が発火
+
                 latestRows = rows
 
-                val displayRows = if (showCompleted) {
-                    rows
-                } else {
-                    rows.filter { !it.done }    // 完了フラフは非表示
-                }
-                adapter = TaskAdapter(this@MainActivity, displayRows) { task, isChecked ->
+                val currentRows = if (showCompleted) rows else rows.filter { !it.done }    // 完了フラフは非表示
+                adapter = TaskAdapter(this@MainActivity, currentRows) { task, isChecked ->
                     viewModel.updateDone(task.id, isChecked)
                 }
                 tasklist.adapter = adapter
@@ -90,7 +87,7 @@ class MainActivity : AppCompatActivity() {  // AppCompatActivityクラスを継�
 
     // タスク長押し処理
     private fun handleLongClick(position: Int) {
-        val task = currentRows[position] // 画面表示から削除の対象を特定
+        val task = adapter.getItem(position) // adapterから削除の対象を特定
 
         //  削除
         AlertDialog.Builder(this)
