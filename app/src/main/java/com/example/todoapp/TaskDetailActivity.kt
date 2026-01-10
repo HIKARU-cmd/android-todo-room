@@ -111,7 +111,7 @@ class TaskDetailActivity : AppCompatActivity() {
         buttonClearDue.setOnClickListener {
             dueAt = null
             textDue.text = formatDueText(dueAt)
-            Toast.makeText(this@TaskDetailActivity, "期限をクリアしました", Toast.LENGTH_SHORT).show()
+            toast("期限をクリアしました")
         }
 
 
@@ -120,9 +120,10 @@ class TaskDetailActivity : AppCompatActivity() {
             val newTitle = editTitle.text.toString().trim()
             val newMemo = editMemo.text.toString().trim()
 
-            if (newTitle.isEmpty()) {
-               Toast.makeText(this, "タイトルを入力してください", Toast.LENGTH_SHORT).show()
-               return@setOnClickListener
+            val error = validateInput(newTitle, newMemo)
+            if (error != null) {
+                toast(error)
+                return@setOnClickListener
             }
 
             lifecycleScope.launch {
@@ -138,7 +139,6 @@ class TaskDetailActivity : AppCompatActivity() {
 
     // 期限表示用のフォーマット
     private val dateFormat = SimpleDateFormat("yyyy/MM/dd", Locale.JAPAN)
-
     private fun formatDueText(dueAt: Long?): String {
         return if(dueAt == null){
             "期限：未設定"
@@ -166,8 +166,22 @@ class TaskDetailActivity : AppCompatActivity() {
         ).show()
     }
 
+    // アクションバー左上の「←戻る」ボタンが押されたときの処理
     override fun onSupportNavigateUp(): Boolean {
         finish()
         return true
+    }
+
+    // バリデーション関数
+    private fun validateInput(title: String, memo: String): String? {
+        if(title.isBlank()) return "タイトルを入力してください"
+        if(title.length > 50) return "タイトルは50文字以内にしてください"
+        if(memo.length > 300) return "メモは300文字以内にしてください"
+        return null
+    }
+
+    // トーストをまとめる
+    private fun toast(msg: String) {
+        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
     }
 }

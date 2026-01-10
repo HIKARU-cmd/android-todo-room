@@ -68,7 +68,7 @@ class MainActivity : AppCompatActivity() {  // AppCompatActivityクラスを継�
         }
 
         // タスク長押し処理
-        tasklist.setOnItemLongClickListener { _, _, position, _ ->                              // positionはListViewの中で何番目かを表す
+        tasklist.setOnItemLongClickListener { _, _, position, _ ->
             handleLongClick(position)
             true //trueを返して処理が完了したということを、返している
         }
@@ -76,10 +76,15 @@ class MainActivity : AppCompatActivity() {  // AppCompatActivityクラスを継�
 
     // タスク追加処理
     private fun handleAddTask(taskInput: EditText) {
-        val text = taskInput.text.toString().trim()                                         // textはkotlinのライブラリの一部である、プロパティを読んでいる、ここのプロパティは実際には関数を読んでいる。
-        if (text.isEmpty()) {
-            Toast.makeText(this, "タスクを入力してください", Toast.LENGTH_SHORT).show()
-            return
+        val text = taskInput.text.toString().trim()
+        when {
+            text.isBlank() -> { toast("タスクを入力してください",)
+                return
+            }
+            text.length > 50 -> {
+                toast("タスクは50文字以内で入力してください")
+                return
+            }
         }
         viewModel.add(text)
         taskInput.text.clear()
@@ -95,7 +100,7 @@ class MainActivity : AppCompatActivity() {  // AppCompatActivityクラスを継�
             .setMessage("「${task.title}」を削除してもよろしいですか？")
             .setPositiveButton("削除") { _, _ ->
                 viewModel.deleteById(task.id)
-                Toast.makeText(this@MainActivity, "削除しました", Toast.LENGTH_SHORT).show()
+                toast("削除しました")
             }
             .setNegativeButton("キャンセル", null)
             .show()
@@ -107,5 +112,10 @@ class MainActivity : AppCompatActivity() {  // AppCompatActivityクラスを継�
             viewModel.updateDone(task.id, isChecked)
         }
         findViewById<ListView>(R.id.tasklist).adapter = adapter
+    }
+
+    // トーストをまとめる
+    private fun toast(msg: String) {
+        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
     }
 }
